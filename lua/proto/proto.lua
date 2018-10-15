@@ -7,6 +7,7 @@ local proto = {}
 -- order is relevant as for instance arp requires eth/ip addresses
 proto.eth = require "proto.ethernet"
 proto.ethernet = proto.eth
+proto.timesync = require "proto.timesync"
 proto.ip4 = require "proto.ip4"
 proto.ip6 = require "proto.ip6"
 proto.arp = require "proto.arp"

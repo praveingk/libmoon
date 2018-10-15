@@ -20,7 +20,6 @@ local istype = ffi.istype
 local write = io.write
 local strSplit = strSplit
 
-
 --- Payload type, required by some protocols, defined before loading them
 ffi.cdef[[
 	union payload_t {
@@ -124,7 +123,7 @@ function pkt:getSize()
 	return self.pkt_len
 end
 
---- Returns the packet data cast to the best fitting packet struct.
+--- Returns the packet data cast to the best fitting packet struct. 
 --- Starting with ethernet header.
 --- @return packet data as cdata of best fitting packet
 function pkt:get()
@@ -244,7 +243,7 @@ function pkt:offloadUdpChecksum(ipv4, l2Len, l3Len)
 		self.tx_offload = l2Len + l3Len * 128
 		-- calculate pseudo header checksum because the NIC doesn't do this...
 		dpdkc.calc_ipv4_pseudo_header_checksum(self:getData(), 20)
-	else
+	else 
 		l3Len = l3Len or 40
 		self.ol_flags = bit.bor(self.ol_flags, dpdk.PKT_TX_IPV6, dpdk.PKT_TX_IP_CKSUM, dpdk.PKT_TX_UDP_CKSUM)
 		self.tx_offload = l2Len + l3Len * 128
@@ -267,7 +266,7 @@ function pkt:offloadTcpChecksum(ipv4, l2Len, l3Len)
 		self.tx_offload = l2Len + l3Len * 128
 		-- calculate pseudo header checksum because the NIC doesn't do this...
 		dpdkc.calc_ipv4_pseudo_header_checksum(self:getData(), 25)
-	else
+	else 
 		l3Len = l3Len or 40
 		self.ol_flags = bit.bor(self.ol_flags, dpdk.PKT_TX_IPV6, dpdk.PKT_TX_IP_CKSUM, dpdk.PKT_TX_TCP_CKSUM)
 		self.tx_offload = l2Len + l3Len * 128
@@ -303,7 +302,7 @@ local packetMakeStruct
 --- @see packetMakeStruct
 function createStack(...)
 	local args = { ... }
-
+	
 	local packet = {}
 	packet.__index = packet
 	local noPayload = args[#args] == "noPayload"
@@ -319,15 +318,15 @@ function createStack(...)
 
 	-- functions of the packet
 	packet.getArgs = function() return args end
-
+	
 	packet.getName = function() return packetName end
 
 	packet.getHeaders = packetGetHeaders
 
-	packet.getHeader = packetGetHeader
+	packet.getHeader = packetGetHeader 
 
 	packet.dump = packetDump
-
+	
 	packet.fill = packetFill
 
 	packet.get = packetGet
@@ -340,7 +339,7 @@ function createStack(...)
 	-- functions for manual (not offloaded) checksum calculations
 	-- runtime critical function, load specific code during runtime
 	packet.calculateChecksums = packetCalculateChecksums(args)
-
+	
 	for _, v in ipairs(args) do
 		local data = getHeaderData(v)
 		header = data['proto']
@@ -377,7 +376,7 @@ function getHeaderData(v)
 		local member = v['name']
 		local subType
 		-- special alias for ethernet
-		if v[1] == "eth" or v[1] == "ethernet" then
+		if v[1] == "eth" or v[1] == "ethernet" then 
 			header = "ethernet"
 			member = member or "eth"
 		end
@@ -393,13 +392,11 @@ function getHeaderData(v)
 			return { proto = "ethernet", name = "eth", length = nil, subType = "default" }
 		end
 		-- set default subtype if available
-		-- printf(v)
 		local subType
 		if proto[v].defaultType then
 			subType = subType or proto[v].defaultType
 		end
 		-- otherwise header name = member name
-		-- printf("returning %s\n",v)
 		return { proto = v, name = v, length = nil, subType = subType }
 	end
 end
@@ -407,14 +404,12 @@ end
 --- Get all headers of a packet as list.
 --- @param self The packet
 --- @return Table of members of the packet
-function packetGetHeaders(self)
-	local headers = {}
-	for i, v in ipairs(self:getArgs()) do
-	--	printf(v)
-		headers[i] = packetGetHeader(self, v)
-	--	printf("Got Header")
-	end
-	return headers
+function packetGetHeaders(self) 
+	local headers = {} 
+	for i, v in ipairs(self:getArgs()) do 
+		headers[i] = packetGetHeader(self, v) 
+	end 
+	return headers 
 end
 
 --- Get the specified header of a packet (e.g. self.eth).
@@ -432,7 +427,7 @@ end
 --- @param stream the IO stream to write to, optional (default = io.stdout)
 --- @param colorized Dump the packet colorized, every protocol in a different color (default = true)
 --- @param wireshark Dump in wireshark compatible format (Wireshark -> Import from Hex Dump)
-function packetDump(self, bytes, stream, colorized, wireshark)
+function packetDump(self, bytes, stream, colorized, wireshark) 
 	if type(bytes) == "userdata" then
 		-- if someone calls this directly on a packet
 		stream = bytes
@@ -443,15 +438,12 @@ function packetDump(self, bytes, stream, colorized, wireshark)
 	colorized = colorized == nil or colorized
 	wireshark = wireshark or false
 
-	--printf("Printing PacketDump")
-
 	-- separators (protocol offsets) for colorized hex dump
 	local seps = { }
 	local colorCode = ''
 
 	if not wireshark then
 		-- print timestamp
-		--printf("Dump")
 		stream:write(colorized and white(getTimeMicros()) or getTimeMicros())
 
 		-- headers in cleartext
@@ -461,7 +453,6 @@ function packetDump(self, bytes, stream, colorized, wireshark)
 			end
 
 			local str = v:getString()
-
 			if i == 1 then
 				stream:write(colorCode .. " " .. str .. "\n")
 			else
@@ -479,7 +470,7 @@ end
 --- Per default, all members are set to default values specified in the respective set function.
 --- Optional named arguments can be used to set a member to a user-provided value.
 --- The argument 'pktLength' can be used to automatically calculate and set the length member of headers (e.g. ip header).
---- @code
+--- @code 
 --- fill() --- only default values
 --- fill{ ethSrc="12:23:34:45:56:67", ipTTL=100 } --- all members are set to default values with the exception of ethSrc and ipTTL
 --- fill{ pktLength=64 } --- only default values, length members of the headers are adjusted
@@ -487,7 +478,7 @@ end
 --- @param self The packet
 --- @param args Table of named arguments. For a list of available arguments see "See also"
 --- @note This function is slow. If you want to modify members of a header during a time critical section of your script use the respective setters.
-function packetFill(self, namedArgs)
+function packetFill(self, namedArgs) 
 	namedArgs = namedArgs or {}
 	local headers = self:getHeaders()
 	local args = self:getArgs()
@@ -496,9 +487,9 @@ function packetFill(self, namedArgs)
 		local curMember = getHeaderData(args[i])['name']
 		local nextHeader = getHeaderData(args[i + 1])
 		nextHeader = nextHeader and nextHeader['proto']
-
+		
 		namedArgs = v:setDefaultNamedArgs(curMember, namedArgs, nextHeader, accumulatedLength, ffi.sizeof(v))
-		v:fill(namedArgs, curMember)
+		v:fill(namedArgs, curMember) 
 
 		accumulatedLength = accumulatedLength + ffi.sizeof(v)
 	end
@@ -508,14 +499,14 @@ end
 --- @param self The packet
 --- @return Table of named arguments. For a list of arguments see "See also".
 --- @see packetFill
-function packetGet(self)
-	local namedArgs = {}
+function packetGet(self) 
+	local namedArgs = {} 
 	local args = self:getArgs()
-	for i, v in ipairs(self:getHeaders()) do
+	for i, v in ipairs(self:getHeaders()) do 
 		local member = getHeaderData(args[i])['name']
-		namedArgs = mergeTables(namedArgs, v:get(member))
-	end
-	return namedArgs
+		namedArgs = mergeTables(namedArgs, v:get(member)) 
+	end 
+	return namedArgs 
 end
 
 --- Try to find out what the next header in the payload of this packet is.
@@ -531,15 +522,15 @@ function packetResolveLastHeader(self)
 		local sub = strSplit(name, "_")
 		if sub[#sub] ~= subType then
 			sub[#sub] = subType
-
+			
 			local newName = table.concat(sub, "_")
 			return ffi.cast(newName .. "*", self):resolveLastHeader()
 		end
 	end
 
 	-- do we have struct with correct header length?
-	local len = headers[#headers]:getVariableLength()
-	if len and len > 0 then
+	local len = headers[#headers]:getVariableLength() 
+	if len and len > 0 then	
 		local sub = strSplit(name, "_")
 		local l = sub[#sub - 1]
 		if len ~= l then
@@ -561,7 +552,7 @@ function packetResolveLastHeader(self)
 				return ffi.cast(newName .. "*", self):resolveLastHeader()
 			end
 		end
-	end
+	end	
 	local nextHeader = headers[#headers]:resolveNextHeader()
 
 	-- unable to resolve: either there is no next header, or libmoon does not support it yet
@@ -596,7 +587,7 @@ function packetResolveLastHeader(self)
 			if found then
 				newName = found
 			else
-				-- last resort: build new packet type. However, one has to consider that one header
+				-- last resort: build new packet type. However, one has to consider that one header 
 				-- might occur multiple times! In this case the member must get a new (unique!) name.
 				local args = self:getArgs()
 				local newArgs = {}
@@ -621,7 +612,7 @@ function packetResolveLastHeader(self)
 				-- create new packet. It is unlikely that exactly this packet type with this made up naming scheme will be used
 				-- Therefore, we don't really want to "safe" the cast function
 				pkt.TMP_PACKET = createStack(unpack(newArgs))
-
+				
 				-- name of the new packet type
 				newName = newName .. '_' .. newMember .. '_x_' .. (nextSubType or 'x')
 			end
@@ -660,7 +651,7 @@ function packetSetLength(args)
 
 	-- build complete function
 	str = [[
-		return function(self, length)]]
+		return function(self, length)]] 
 			.. str .. [[
 		end]]
 
@@ -681,7 +672,7 @@ function packetCalculateChecksums(args)
 		local data = getHeaderData(v)
 		header = data['proto']
 		member = data['name']
-
+		
 		-- if the header has a checksum, call the function
 		if header == "ip4" or header == "icmp" then -- FIXME NYI or header == "udp"
 			str = str .. [[
@@ -693,13 +684,13 @@ function packetCalculateChecksums(args)
 				]]
 		end
 	end
-
+	
 	-- build complete function
 	str = [[
-		return function(self, data, len, ipv4)]]
+		return function(self, data, len, ipv4)]] 
 			.. str .. [[
 		end]]
-
+	
 	-- load new function and return it
 	local func = assert(loadstring(str))()
 
@@ -733,7 +724,7 @@ local function defineHeaderStruct(p, subType, size)
 		local member = (subType and proto[p][subType].headerVariableMember or proto[p].headerVariableMember) .. "%["
 		str = string.gsub(str, member, member .. (size or 0))
 	end
-
+	
 	-- build the name
 	str = string.gsub(str, "NAME", name)
 
@@ -746,7 +737,7 @@ local function defineHeaderStruct(p, subType, size)
 	createdHeaderStructs[name] = true
 
 	-- return name used to generate stack
-	return name
+	return name	
 end
 
 --- Table that contains the names and args of all created packet structs
@@ -770,10 +761,10 @@ end
 --- makeStruct('eth', { 'ip4', 'ip' }, 'udp') --- creates an UDP packet struct
 --- --- the ip4 member of the packet is named 'ip'
 --- @endcode
---- The name of the created (internal) struct looks as follows:
---- struct __HEADER1_MEMBER1__HEADER2_MEMBER2 ...
---- Only the "__" (double underscore) has the special meaning of "a new header starts with name
---- <everything until "_" (single underscore)>, followed by the member name <everything after "_"
+--- The name of the created (internal) struct looks as follows: 
+--- struct __HEADER1_MEMBER1__HEADER2_MEMBER2 ... 
+--- Only the "__" (double underscore) has the special meaning of "a new header starts with name 
+--- <everything until "_" (single underscore)>, followed by the member name <everything after "_" 
 --- until next header starts (indicated by next __)>"
 --- @param args list of keywords/tables of keyword-member pairs
 --- @param noPayload do not append payload VLA
@@ -817,11 +808,11 @@ function packetMakeStruct(args, noPayload)
 
 	-- add rest of the struct
 	str = [[
-	struct __attribute__((__packed__)) ]]
-	.. name
+	struct __attribute__((__packed__)) ]] 
+	.. name 
 	.. [[ {
 		]]
-	.. str
+	.. str 
 	.. (not noPayload and [[
 		union payload_t payload;
 	]] or "")
@@ -834,13 +825,13 @@ function packetMakeStruct(args, noPayload)
 		log:warn("Struct with name \"" .. name .. "\" already exists. Skipping.")
 		return
 	else
-
+		
 		-- add to list of existing structs
 		pkt.packetStructs[name] = {args}
 
 		log:debug("Created struct %s", name)
 		log:debug("%s", str)
-
+		
 		-- add struct definition
 		ffi.cdef(str)
 
@@ -876,54 +867,51 @@ pkt.getEthVlanPacket = pkt.getEthernetVlanPacket
 pkt.getEthernetQinQPacket = createStack({"eth", subType = "qinq"})
 pkt.getEthQinQPacket = pkt.getEthernetQinQPacket
 
-pkt.getIP4Packet = createStack("eth", "ip4")
+pkt.getIP4Packet = createStack("eth", "ip4") 
 pkt.getIP6Packet = createStack("eth", "ip6")
-pkt.getIPPacket = function(self, ip4)
-	ip4 = ip4 == nil or ip4
-	if ip4 then
-		return pkt.getIP4Packet(self)
-	else
-		return pkt.getIP6Packet(self)
-	end
-end
+pkt.getIPPacket = function(self, ip4) 
+	ip4 = ip4 == nil or ip4 
+	if ip4 then 
+		return pkt.getIP4Packet(self) 
+	else 
+		return pkt.getIP6Packet(self) 
+	end 
+end   
 
 pkt.getArpPacket = createStack("eth", "arp")
 
 pkt.getIcmp4Packet = createStack("eth", "ip4", "icmp")
 pkt.getIcmp6Packet = createStack("eth", "ip6", "icmp")
 pkt.getIcmpPacket = function(self, ip4)
-	ip4 = ip4 == nil or ip4
-	if ip4 then
-		return pkt.getIcmp4Packet(self)
-	else
-		return pkt.getIcmp6Packet(self)
-	end
-end
+	ip4 = ip4 == nil or ip4 
+	if ip4 then 
+		return pkt.getIcmp4Packet(self) 
+	else 
+		return pkt.getIcmp6Packet(self) 
+	end 
+end   
 
 pkt.getUdp4Packet = createStack("eth", "ip4", "udp")
-pkt.getUdp6Packet = createStack("eth", "ip6", "udp")
-pkt.getUdpPacket = function(self, ip4)
-	ip4 = ip4 == nil or ip4
-	if ip4 then
-		return pkt.getUdp4Packet(self)
-	else
+pkt.getUdp6Packet = createStack("eth", "ip6", "udp") 
+pkt.getUdpPacket = function(self, ip4) 
+	ip4 = ip4 == nil or ip4 
+	if ip4 then 
+		return pkt.getUdp4Packet(self) 
+	else 
 		return pkt.getUdp6Packet(self)
-	end
-end
+	end 
+end   
 
 pkt.getTcp4Packet = createStack("eth", "ip4", "tcp")
 pkt.getTcp6Packet = createStack("eth", "ip6", "tcp")
-pkt.getTcpPacket = function(self, ip4)
-	ip4 = ip4 == nil or ip4
-	if ip4 then
-		return pkt.getTcp4Packet(self)
-	else
-		return pkt.getTcp6Packet(self)
-	end
-end
-
-pkt.getTimesyncPacket = createStack("eth", "timesync")
-pkt.getUdpTimesyncPacket = createStack("eth", "ip4", "udp", "timesync")
+pkt.getTcpPacket = function(self, ip4) 
+	ip4 = ip4 == nil or ip4 
+	if ip4 then 
+		return pkt.getTcp4Packet(self) 
+	else 
+		return pkt.getTcp6Packet(self) 
+	end 
+end   
 
 pkt.getPtpPacket = createStack("eth", "ptp")
 pkt.getUdpPtpPacket = createStack("eth", "ip4", "udp", "ptp")
@@ -932,36 +920,36 @@ pkt.getVxlanPacket = createStack("eth", "ip4", "udp", "vxlan")
 pkt.getVxlanEthernetPacket = createStack("eth", "ip4", "udp", "vxlan", { "eth", name = "innerEth" })
 
 pkt.getEsp4Packet = createStack("eth", "ip4", "esp")
-pkt.getEsp6Packet = createStack("eth", "ip6", "esp")
-pkt.getEspPacket = function(self, ip4)
-	ip4 = ip4 == nil or ip4
-	if ip4 then
-		return pkt.getEsp4Packet(self)
-	else
-		return pkt.getEsp6Packet(self)
-	end
+pkt.getEsp6Packet = createStack("eth", "ip6", "esp") 
+pkt.getEspPacket = function(self, ip4) 
+	ip4 = ip4 == nil or ip4 
+	if ip4 then 
+		return pkt.getEsp4Packet(self) 
+	else 
+		return pkt.getEsp6Packet(self) 
+	end 
 end
 
 pkt.getAH4Packet = createStack("eth", "ip4", "ah")
 pkt.getAH6Packet = nil --createStack("eth", "ip6", "ah6") --TODO: AH6 needs to be implemented
-pkt.getAHPacket = function(self, ip4)
-	ip4 = ip4 == nil or ip4
-	if ip4 then
-		return pkt.getAH4Packet(self)
-	else
-		return pkt.getAH6Packet(self)
-	end
+pkt.getAHPacket = function(self, ip4) 
+	ip4 = ip4 == nil or ip4 
+	if ip4 then 
+		return pkt.getAH4Packet(self) 
+	else 
+		return pkt.getAH6Packet(self) 
+	end 
 end
 
 pkt.getDns4Packet = createStack('eth', 'ip4', 'udp', 'dns')
 pkt.getDns6Packet = createStack('eth', 'ip6', 'udp', 'dns')
-pkt.getDnsPacket = function(self, ip4)
-	ip4 = ip4 == nil or ip4
-	if ip4 then
-		return pkt.getDns4Packet(self)
-	else
-		return pkt.getDns6Packet(self)
-	end
+pkt.getDnsPacket = function(self, ip4) 
+	ip4 = ip4 == nil or ip4 
+	if ip4 then 
+		return pkt.getDns4Packet(self) 
+	else 
+		return pkt.getDns6Packet(self) 
+	end 
 end
 
 pkt.getSFlowPacket = createStack("eth", "ip4", "udp", {"sflow", subType = "ip4"}, "noPayload")
@@ -973,8 +961,8 @@ pkt.getLacpPacket = createStack('eth', 'lacp')
 pkt.getGre4Packet = createStack("eth", "ip4", "gre")
 pkt.getGre6Packet = createStack("eth", "ip6", "gre")
 pkt.getGrePacket = function(self, ip4)
-	ip4 = ip4 == nil or ip4
-	if ip4 then
+	ip4 = ip4 == nil or ip4 
+	if ip4 then 
 		return pkt.getGre4Packet(self)
 	else
 		return pkt.getGre6Packet(self)
