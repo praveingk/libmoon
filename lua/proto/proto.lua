@@ -23,5 +23,6 @@ proto.ipfix = require "proto.ipfix"
 proto.sflow = require "proto.sflow"
 proto.lacp = require "proto.lacp"
 proto.gre = require "proto.gre"
-
+proto.packetrecord = require "proto.packetrecord"
+proto.trigger = require "proto.trigger"
 return proto

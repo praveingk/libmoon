@@ -923,6 +923,9 @@ pkt.getTcpPacket = function(self, ip4)
 end
 
 pkt.getTimesyncPacket = createStack("eth", "timesync")
+pkt.getPacketrecordPacket = createStack("eth", "packetrecord")
+pkt.getTriggerPacket = createStack("eth", "trigger")
+
 pkt.getUdpTimesyncPacket = createStack("eth", "ip4", "udp", "timesync")
 
 pkt.getPtpPacket = createStack("eth", "ptp")
